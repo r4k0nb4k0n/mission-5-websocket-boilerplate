@@ -1,0 +1,25 @@
+{
+  "name": "mission-5-websocket-boilerplate",
+  "version": "1.0.0",
+  "description": "DSC UOS #2020-fall-web Mission 5 WebSocket Boilerplate",
+  "main": "index.js",
+  "repository": "https://github.com/r4k0nb4k0n/mission-5-websocket-boilerplate.git",
+  "author": "r4k0nb4k0n",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^3.0.4"
+  },
+  "devDependencies": {
+    "concurrently": "^5.3.0",
+    "nodemon": "^2.0.6"
+  },
+  "scripts": {
+    "dev": "concurrently \"yarn dev:backend\" \"yarn dev:frontend\"",
+    "dev:backend": "nodemon index.js",
+    "dev:frontend": "cd frontend && yarn start",
+    "start": "export NODE_ENV=production && node index.js",
+    "heroku-postbuild": "cd frontend && yarn && yarn build"
+  }
+}
