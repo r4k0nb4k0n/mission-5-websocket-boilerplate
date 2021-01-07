@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  Button,
   Card,
   CardContent,
   CardActions,
@@ -26,14 +25,14 @@ const useStyles = makeStyles({
     maxHeight: "100vh",
   },
   dialogSection: {
-    minHeight: "85vh",
-    maxHeight: "85vh",
+    minHeight: "83vh",
+    maxHeight: "83vh",
     overflowY: "scroll",
   },
   inputSection: {
     padding: "0 0 0 0",
-    minHeight: "15vh",
-    maxHeight: "15vh",
+    minHeight: "17vh",
+    maxHeight: "17vh",
   },
 });
 
@@ -50,6 +49,12 @@ export function Chat() {
   const [inputMessage, setInputMessage] = useState("");
   const handleInputMessageChange = (event) => {
     setInputMessage(event.target.value);
+  };
+  const handleSubmit = (event) => {
+    dispatch(appendLog(`sent: ${inputMessage}`));
+    socket.emit("chat", inputMessage);
+    setInputMessage("");
+    event.preventDefault();
   };
   useEffect(() => {
     socket.on("chat", (message) => {
@@ -79,29 +84,18 @@ export function Chat() {
       </CardContent>
       <CardActions className={classes.inputSection}>
         <Grid container>
-          <Grid xs={9}>
-            <TextField
-              label="메시지"
-              variant="outlined"
-              size="small"
-              value={inputMessage}
-              onChange={handleInputMessageChange}
-            />
-          </Grid>
-          <Grid xs={3}>
-            <Button
-              className={classes.sendButton}
-              variant="contained"
-              color="primary"
-              size="medium"
-              onClick={() => {
-                dispatch(appendLog(`sent: ${inputMessage}`));
-                socket.emit("chat", inputMessage);
-                setInputMessage("");
-              }}
-            >
-              전송
-            </Button>
+          <Grid item xs={12}>
+            <form noValidate autoComplete="off" onSubmit={handleSubmit}>
+              <TextField
+                fullWidth
+                label="메시지"
+                variant="outlined"
+                color="#02feff"
+                size="normal"
+                value={inputMessage}
+                onChange={handleInputMessageChange}
+              />
+            </form>
           </Grid>
         </Grid>
       </CardActions>
