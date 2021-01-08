@@ -35,7 +35,7 @@ io.on("connection", (socket) => {
   // socket `chat` event handler
   socket.on("chat", (message) => {
     console.log(`chat: ${message}`);
-    io.emit("chat", message);
+    socket.broadcast.emit("chat", message);
   });
 });
 

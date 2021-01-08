@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   Card,
   CardContent,
   CardActions,
   Grid,
-  List,
-  ListItem,
-  ListItemText,
+  Paper,
+  Text,
   TextField,
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -25,14 +24,51 @@ const useStyles = makeStyles({
     maxHeight: "100vh",
   },
   dialogSection: {
-    minHeight: "83vh",
-    maxHeight: "83vh",
-    overflowY: "scroll",
+    height: "83vh",
+    overflowY: "auto",
   },
   inputSection: {
     padding: "0 0 0 0",
     minHeight: "17vh",
     maxHeight: "17vh",
+  },
+  usernameMine: {
+    color: "black",
+    fontSize: "14px",
+    textAlign: "right",
+    marginRight: "10px",
+  },
+  usernameOthers: {
+    color: "black",
+    fontSize: "14px",
+    textAlign: "left",
+    marginLeft: "10px",
+  },
+  msgMine: {
+    border: "1px solid #4267b2",
+    padding: "7px 15px",
+    borderRadius: "15px",
+    fontSize: "15px",
+    color: "white",
+    background: "#4267b2",
+    marginBottom: "20px",
+    float: "right",
+    maxWidth: "55%",
+    wordBreak: "break-all",
+    fontWeight: "bold",
+    textAlign: "right",
+  },
+  msgOthers: {
+    border: "1px solid #dfe6e9",
+    padding: "7px 15px",
+    borderRadius: "15px",
+    fontSize: "15px",
+    background: "#dfe6e9",
+    marginBottom: "20px",
+    float: "left",
+    maxWidth: "55%",
+    wordBreak: "break-all",
+    textAlign: "left",
   },
 });
 
@@ -43,6 +79,7 @@ socket.on("connect", () => {
 });
 
 export function Chat() {
+  const messageEl = useRef(null);
   const classes = useStyles();
   const logs = useSelector(selectLogs);
   const dispatch = useDispatch();
@@ -62,25 +99,46 @@ export function Chat() {
       dispatch(appendLog(`received: ${message}`));
     });
   }, [dispatch]);
+  useEffect(() => {
+    if (messageEl) {
+      console.log(messageEl);
+      messageEl.current.addEventListener("DOMNodeInserted", (event) => {
+        const { currentTarget: target } = event;
+        target.scroll({ top: target.scrollHeight, behavior: "smooth" });
+      });
+    }
+  }, []);
   return (
     <Card className={classes.chatCard}>
-      <CardContent className={classes.dialogSection}>
-        <Grid item xs={12}>
-          <List>
-            {logs.map((log, index) => (
-              <ListItem key={index}>
-                <Grid container>
-                  <Grid item xs={12}>
-                    <ListItemText
-                      align={log.includes("sent") ? "right" : "left"}
-                      primary={log}
-                    ></ListItemText>
-                  </Grid>
-                </Grid>
-              </ListItem>
-            ))}
-          </List>
-        </Grid>
+      <CardContent className={classes.dialogSection} ref={messageEl}>
+        {logs.map((log, index) => (
+          <Grid container>
+            <Grid
+              direction="column"
+              alignItems={log.includes("sent") ? "flex-end" : "flex-start"}
+              xs={12}
+            >
+              <div
+                className={
+                  log.includes("sent")
+                    ? classes.usernameMine
+                    : classes.usernameOthers
+                }
+              >
+                username
+              </div>
+              <Paper
+                key={index}
+                className={
+                  log.includes("sent") ? classes.msgMine : classes.msgOthers
+                }
+                elevation={0}
+              >
+                {log}
+              </Paper>
+            </Grid>
+          </Grid>
+        ))}
       </CardContent>
       <CardActions className={classes.inputSection}>
         <Grid container>
@@ -90,8 +148,7 @@ export function Chat() {
                 fullWidth
                 label="메시지"
                 variant="outlined"
-                color="#02feff"
-                size="normal"
+                size="medium"
                 value={inputMessage}
                 onChange={handleInputMessageChange}
               />
