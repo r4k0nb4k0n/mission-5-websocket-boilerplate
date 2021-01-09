@@ -6,12 +6,17 @@ import {
   CardActions,
   Grid,
   Paper,
-  Text,
+  Snackbar,
   TextField,
 } from "@material-ui/core";
+import MuiAlert from "@material-ui/lab/Alert";
 import { makeStyles } from "@material-ui/core/styles";
 import { appendLog, selectLogs } from "./chatSlice";
 import { io } from "socket.io-client";
+
+function Alert(props) {
+  return <MuiAlert elevation={6} variant="filled" {...props} />;
+}
 
 const useStyles = makeStyles({
   sendButton: {
@@ -83,21 +88,59 @@ export function Chat() {
   const classes = useStyles();
   const logs = useSelector(selectLogs);
   const dispatch = useDispatch();
+  const [open, setOpen] = React.useState(false);
+  const handleClick = () => {
+    setOpen(true);
+  };
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpen(false);
+  };
+  const [alertMessage, setAlertMessage] = React.useState("");
+  const [typing, setTyping] = useState([]);
+  const [username, setUsername] = useState(
+    Math.random().toString(36).substr(2, 11)
+  );
+  const handleUsernameChange = (event) => {
+    setUsername(event.target.value);
+  };
   const [inputMessage, setInputMessage] = useState("");
   const handleInputMessageChange = (event) => {
     setInputMessage(event.target.value);
   };
   const handleSubmit = (event) => {
-    dispatch(appendLog(`sent: ${inputMessage}`));
-    socket.emit("chat", inputMessage);
-    setInputMessage("");
+    const payload = { username: username, message: inputMessage };
+    if (inputMessage !== "") {
+      dispatch(appendLog(payload));
+      socket.emit("typing done", payload);
+      socket.emit("chat", payload);
+      setInputMessage("");
+    }
     event.preventDefault();
   };
   useEffect(() => {
-    socket.on("chat", (message) => {
-      console.log(`received: ${message}`);
-      dispatch(appendLog(`received: ${message}`));
+    socket.on("dududunga", (payload) => {
+      console.log(`${payload.username} dududunga!`);
+      setAlertMessage(`${payload.username} dududunga!`);
+      setOpen(true);
     });
+    socket.on("typing yet", (payload) => {
+      console.log(`${payload.username} is typing yet`);
+      if (!typing.includes(payload.username)) {
+        setTyping([...typing, payload.username]);
+      }
+    });
+    socket.on("typing done", (payload) => {
+      console.log(`${payload.username} is typing done`);
+      setTyping(typing.filter((_username) => _username !== payload.username));
+    });
+    socket.on("chat", (payload) => {
+      console.log(`${payload.username} sent: ${payload.message}`);
+      dispatch(appendLog(payload));
+    });
+    socket.emit("set user", { username: username });
   }, [dispatch]);
   useEffect(() => {
     if (messageEl) {
@@ -108,51 +151,92 @@ export function Chat() {
       });
     }
   }, []);
+  useEffect(() => {
+    const payload = { username: username };
+    const timeoutId = setTimeout(
+      () => socket.emit("typing done", payload),
+      1000
+    );
+    return () => {
+      socket.emit("typing yet", payload);
+      clearTimeout(timeoutId);
+    };
+  }, [inputMessage]);
   return (
     <Card className={classes.chatCard}>
+      <Snackbar
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        open={open}
+        autoHideDuration={3000}
+        onClose={handleClose}
+      >
+        <Alert onClose={handleClose} severity="info">
+          {alertMessage}
+        </Alert>
+      </Snackbar>
       <CardContent className={classes.dialogSection} ref={messageEl}>
         {logs.map((log, index) => (
           <Grid container>
             <Grid
               direction="column"
-              alignItems={log.includes("sent") ? "flex-end" : "flex-start"}
+              alignItems={log.username === username ? "flex-end" : "flex-start"}
               xs={12}
             >
               <div
                 className={
-                  log.includes("sent")
+                  log.username === username
                     ? classes.usernameMine
                     : classes.usernameOthers
                 }
               >
-                username
+                {log.username}
               </div>
               <Paper
                 key={index}
                 className={
-                  log.includes("sent") ? classes.msgMine : classes.msgOthers
+                  log.username === username
+                    ? classes.msgMine
+                    : classes.msgOthers
                 }
                 elevation={0}
               >
-                {log}
+                {log.message}
               </Paper>
             </Grid>
           </Grid>
         ))}
       </CardContent>
       <CardActions className={classes.inputSection}>
-        <Grid container>
-          <Grid item xs={12}>
-            <form noValidate autoComplete="off" onSubmit={handleSubmit}>
+        <Grid direction="column" xs={12}>
+          <Grid item xs={12} style={{ fontSize: "12px" }}>
+            {typing.length > 0
+              ? `${typing.join(", ")}이(가) 입력 중입니다...`
+              : "Bleeding-edge chat"}
+          </Grid>
+          <Grid container>
+            <Grid item xs={3}>
               <TextField
                 fullWidth
-                label="메시지"
+                label="이름"
                 variant="outlined"
-                size="medium"
-                value={inputMessage}
-                onChange={handleInputMessageChange}
+                size="small"
+                value={username}
+                onChange={handleUsernameChange}
               />
-            </form>
+            </Grid>
+            <Grid item xs={9}>
+              <form noValidate autoComplete="off" onSubmit={handleSubmit}>
+                <TextField
+                  autoFocus
+                  fullWidth
+                  label="메시지"
+                  variant="outlined"
+                  size="small"
+                  value={inputMessage}
+                  onChange={handleInputMessageChange}
+                />
+              </form>
+            </Grid>
           </Grid>
         </Grid>
       </CardActions>

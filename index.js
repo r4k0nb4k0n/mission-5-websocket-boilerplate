@@ -23,19 +23,43 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
+let users = [];
+
 // socket.io `connection` event handler
 io.on("connection", (socket) => {
   console.log("user connected");
+
+  socket.on("set user", (payload) => {
+    if (!users.includes(payload.username)) {
+      users = [...users, payload.username];
+      socket.broadcast.emit("dududunga", payload);
+    } else {
+      users = users.map((_username) =>
+        _username === payload.username ? payload.nextUsername : _username
+      );
+      socket.broadcast.emit("change username", payload);
+    }
+  });
 
   // socket `disconnect` event handler
   socket.on("disconnect", () => {
     console.log("user disconnected");
   });
 
+  socket.on("typing yet", (payload) => {
+    console.log(`${payload.username} is typing yet`);
+    socket.broadcast.emit("typing yet", payload);
+  });
+
+  socket.on("typing done", (payload) => {
+    console.log(`${payload.username} is typing done`);
+    socket.broadcast.emit("typing done", payload);
+  });
+
   // socket `chat` event handler
-  socket.on("chat", (message) => {
-    console.log(`chat: ${message}`);
-    socket.broadcast.emit("chat", message);
+  socket.on("chat", (payload) => {
+    console.log(`${payload.username} sent: ${payload.message}`);
+    socket.broadcast.emit("chat", payload);
   });
 });
 
