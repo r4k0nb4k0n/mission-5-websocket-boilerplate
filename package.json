@@ -8,6 +8,7 @@
   "license": "MIT",
   "private": false,
   "dependencies": {
+    "@material-ui/lab": "^4.0.0-alpha.57",
     "express": "^4.17.1",
     "socket.io": "^3.0.4"
   },
